@@ -1,40 +1,24 @@
 package main
 
 import (
-	"net/http"
-	"time"
 	"encoding/json"
+	"net/http"
+	"github.com/Sancho-Pansa/Timekeeper/internal"
 )
 
-type timeWithZone struct {
-	Offset int `json:"offset"`
-	Time time.Time `json:"time"`
-}
-
-func timezones(w http.ResponseWriter, r *http.Request) {
-	timezonesList := generateTimezoneList()
+func returnTimezones(w http.ResponseWriter, r *http.Request) {
+	timezonesList := timezones.GenerateTimezoneList()
 	jsonStr, err := json.Marshal(timezonesList)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	w.Header().Add("Content-Type", "application/json")
 	w.Write(jsonStr)
 }
 
-func generateTimezoneList() [25]timeWithZone {
-	const UTC_OFFSETS int = 25
-	currentTime := time.Now() // TODO: Doesn't respect actual timezone of PC
-	var timezonesList [UTC_OFFSETS]timeWithZone
-	for i := range UTC_OFFSETS {
-		currentOffset := UTC_OFFSETS / 2 * (-1) + i
-		timezonesList[i] = timeWithZone{ currentOffset, currentTime.Add(time.Hour * time.Duration(currentOffset)) }
-	}
-	return timezonesList
-}
-
 func main() {
-	http.HandleFunc("/timezones", timezones)
+	http.HandleFunc("/timezones", returnTimezones)
 	http.ListenAndServe(":8080", nil)
 }
