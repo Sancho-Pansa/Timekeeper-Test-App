@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"github.com/Sancho-Pansa/Timekeeper/internal"
+	"github.com/Sancho-Pansa/Timekeeper/internal/timezones"
 )
 
 func returnTimezones(w http.ResponseWriter, r *http.Request) {
