@@ -1,24 +1,23 @@
 package main
 
 import (
-	"encoding/json"
+	"log"
 	"net/http"
-	"github.com/Sancho-Pansa/Timekeeper/internal/timezones"
+	"time"
+
+	"github.com/Sancho-Pansa/Timekeeper/internal/api"
 )
 
-func returnTimezones(w http.ResponseWriter, r *http.Request) {
-	timezonesList := timezones.GenerateTimezoneList()
-	jsonStr, err := json.Marshal(timezonesList)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(jsonStr)
-}
-
 func main() {
-	http.HandleFunc("/timezones", returnTimezones)
-	http.ListenAndServe(":8080", nil)
+	server := &http.Server {
+		Addr: ":8080",
+		Handler: api.NewRouter(),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	log.Println("Timekeeper is listening on :8080")
+
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
