@@ -17,4 +17,7 @@ COPY --from=builder /timekeeper /app/timekeeper
 
 EXPOSE "8080"
 
+ENV APP_USERNAME="user"
+ENV APP_PASSWORD="password"
+
 CMD [ "/app/timekeeper" ]
