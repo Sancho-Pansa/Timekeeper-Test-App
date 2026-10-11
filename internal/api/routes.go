@@ -9,5 +9,7 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("GET /timezones", TimezonesHandler)
 	mux.HandleFunc("GET /version", VersionHandler)
 
-	return mux
+	loggingMux := RequestLogger(mux)
+
+	return loggingMux
 }
