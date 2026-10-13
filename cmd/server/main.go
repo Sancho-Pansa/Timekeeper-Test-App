@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sancho-Pansa/Timekeeper/internal/api"
 	"github.com/Sancho-Pansa/Timekeeper/internal/auth"
+	"github.com/Sancho-Pansa/Timekeeper/internal/store"
 )
 
 func main() {
@@ -19,10 +20,11 @@ func main() {
 	}
 
 	authService := auth.NewService(username, password)
+	memoryStore := store.NewMemoryStore()
 
 	server := &http.Server {
 		Addr: ":8080",
-		Handler: api.NewRouter(authService),
+		Handler: api.NewRouter(authService, memoryStore),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

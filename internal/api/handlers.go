@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Sancho-Pansa/Timekeeper/internal/auth"
+	"github.com/Sancho-Pansa/Timekeeper/internal/store"
 	"github.com/Sancho-Pansa/Timekeeper/internal/timezones"
 )
 
@@ -23,6 +24,11 @@ type AuthResponse struct {
 
 type Handler struct {
 	Auth *auth.Service
+	Store *store.MemoryStore
+}
+
+type FavouriteOffset struct {
+	Offset int `json:"offset"`
 }
 
 func (h *Handler) AuthHandler(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +77,47 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateFavouritesHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 4096)
+
+	jsonDecoder := json.NewDecoder(r.Body)
+	jsonDecoder.DisallowUnknownFields()
+	var favOffset FavouriteOffset
+	if err := jsonDecoder.Decode(&favOffset); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	username, ok := r.Context().Value(usernameKey).(string)
+
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	isAdded := h.Store.AddFavourite(username, favOffset.Offset)
+	if !isAdded {
+		http.Error(w, "This offset is already in Favourites", http.StatusConflict)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) GetFavouritesHandler(w http.ResponseWriter, r *http.Request) {
+	username, ok := r.Context().Value(usernameKey).(string)
+
+	favourites := h.Store.GetFavourites(username)
+
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	writeJson(w, http.StatusOK, favourites)
+}
+
+func (h *Handler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	username, ok := r.Context().Value(usernameKey).(string)
 
 	if !ok {

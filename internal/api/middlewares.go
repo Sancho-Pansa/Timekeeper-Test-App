@@ -27,7 +27,6 @@ func RequestLogger(next http.Handler) http.Handler {
 func RequireAuthorization(authService *auth.Service, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
-
 		parts := strings.Fields(header)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 			unauthorized(w)
