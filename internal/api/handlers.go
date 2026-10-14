@@ -93,15 +93,9 @@ func HealthHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateFavorite(w http.ResponseWriter, r *http.Request) {
 	pathOffset := r.PathValue("offset")
 
-	numericOffset, err := strconv.Atoi(pathOffset)
+	numericOffset, err := validateOffset(pathOffset)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in '%s' method: numeric offset is required", r.Pattern), http.StatusBadRequest)
-		return
-	}
-
-	if numericOffset < -12 || numericOffset > 12 {
-		http.Error(w, fmt.Sprintf("Error in '%s' method: Offset must be between -12 and 12", r.Pattern), http.StatusBadRequest)
-		return
+		writeValidationError(w, r, err)
 	}
 
 	favOffset := FavouriteOffset{Offset: &numericOffset}
@@ -142,9 +136,9 @@ func (h *Handler) DeleteFavorites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pathOffset := r.PathValue("offset")
-	numericOffset, ok := validateOffset(pathOffset, w, r)
-	if !ok {
-		return
+	numericOffset, err := validateOffset(pathOffset)
+	if err != nil {
+		writeValidationError(w, r, err)
 	}
 
 	isDeleted := h.Store.DeleteFavourite(username, numericOffset)
@@ -183,15 +177,17 @@ func VersionHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func validateOffset(offsetValue string, w http.ResponseWriter, r *http.Request) (int, bool) {
+func validateOffset(offsetValue string) (int, error) {
 	numericOffset, err := strconv.Atoi(offsetValue)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error in '%s' method: numeric offset is required", r.Pattern), http.StatusBadRequest)
-		return 0, false
+		return 0, fmt.Errorf("Numeric offset is required")
 	}
 	if numericOffset < -12 || numericOffset > 12 {
-		http.Error(w, fmt.Sprintf("Error in '%s' method: Offset must be between -12 and 12", r.Pattern), http.StatusBadRequest)
-		return 0, false
+		return 0, fmt.Errorf("Offset must be between -12 and 12")
 	}
-	return numericOffset, true
+	return numericOffset, nil
+}
+
+func writeValidationError(w http.ResponseWriter, r *http.Request, err error) {
+	http.Error(w, fmt.Sprintf("Error in '%s' method: %s", r.Pattern, err.Error()), http.StatusBadRequest)
 }
