@@ -157,6 +157,8 @@ func (h *Handler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	writeJson(w, http.StatusOK, map[string]string{
 		"username": username,
+		"favoriteOffsets": fmt.Sprint(h.Store.GetFavourites(username)),
+		"serverTime": time.Now().Format(time.RFC1123Z),
 	})
 }
 
