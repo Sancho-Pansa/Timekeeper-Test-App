@@ -114,13 +114,12 @@ func (h *Handler) CreateFavorite(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetFavorites(w http.ResponseWriter, r *http.Request) {
 	username, ok := r.Context().Value(usernameKey).(string)
-
-	favorites := h.Store.GetFavourites(username)
-
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	favorites := h.Store.GetFavourites(username)
 
 	writeJson(w, http.StatusOK, favorites)
 }
