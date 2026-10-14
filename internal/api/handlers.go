@@ -59,6 +59,10 @@ func (h *Handler) AuthHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.Username == "" || request.Password == "" {
+		http.Error(w, "Empty credentials", http.StatusUnauthorized)
+	}
+
 	if !h.Auth.Authenticate(request.Username, request.Password) {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
@@ -111,7 +115,7 @@ func (h *Handler) CreateFavorite(w http.ResponseWriter, r *http.Request) {
 
 	isAdded := h.Store.AddFavourite(username, *favOffset.Offset)
 	if !isAdded {
-		http.Error(w, "This offset is already in Favourites", http.StatusConflict)
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
