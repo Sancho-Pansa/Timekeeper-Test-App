@@ -22,7 +22,7 @@ func NewRouter(authService *auth.Service, favouriteStore *store.MemoryStore) htt
 
 	mux.Handle("GET /profile", RequireAuthorization(authService, http.HandlerFunc(h.ProfileHandler)))
 	mux.Handle("GET /favorites", RequireAuthorization(authService, http.HandlerFunc(h.GetFavorites)))
-	mux.Handle("POST /favorites/{offset}", RequireAuthorization(authService, http.HandlerFunc(h.CreateFavorite)))
+	mux.Handle("PUT /favorites/{offset}", RequireAuthorization(authService, http.HandlerFunc(h.CreateFavorite)))
 	mux.Handle("DELETE /favorites/{offset}", RequireAuthorization(authService, http.HandlerFunc(h.DeleteFavorites)))
 
 	loggingMux := RequestLogger(mux)
