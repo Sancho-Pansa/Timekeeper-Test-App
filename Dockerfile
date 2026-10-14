@@ -19,5 +19,6 @@ EXPOSE "8080"
 
 ENV APP_USERNAME="user"
 ENV APP_PASSWORD="password"
+ENV APP_VERSION="0.0.10"
 
 CMD [ "/app/timekeeper" ]
