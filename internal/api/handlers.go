@@ -34,6 +34,12 @@ type FavouriteOffset struct {
 	Offset *int `json:"offset"`
 }
 
+type ProfileResponse struct {
+	Username         string    `json:"username"`
+	FavouriteOffsets []int     `json:"favoriteOffsets"`
+	ServerTime       time.Time `json:"serverTime"`
+}
+
 func (h *Handler) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 4096)
 
@@ -154,10 +160,10 @@ func (h *Handler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJson(w, http.StatusOK, map[string]string{
-		"username": username,
-		"favoriteOffsets": fmt.Sprint(h.Store.GetFavourites(username)),
-		"serverTime": time.Now().Format(time.RFC1123Z),
+	writeJson(w, http.StatusOK, ProfileResponse{
+		Username:         username,
+		FavouriteOffsets: h.Store.GetFavourites(username),
+		ServerTime:       time.Now().UTC(),
 	})
 }
 
