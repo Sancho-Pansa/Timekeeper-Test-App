@@ -33,8 +33,8 @@ func (s *MemoryStore) GetFavourites(username string) []int {
 }
 
 func (s *MemoryStore) AddFavourite(username string, offset int) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if s.favourites[username] == nil {
 		s.favourites[username] = make(map[int]struct{})
