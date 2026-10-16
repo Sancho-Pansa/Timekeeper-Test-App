@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -147,4 +148,92 @@ func TestAuthenticatedProfile(t *testing.T) {
 	if profileResponse.Username != "user" {
 		t.Errorf("Endpoint /profile :: Got Username %s, expected 'user'", profileResponse.Username)
 	}
+}
+
+func TestFavoritesEndpoint(t *testing.T) {
+	authService := auth.NewService("user", "password")
+	memoryStore := store.NewMemoryStore()
+	router := NewRouter(authService, memoryStore)
+
+	token, err := authorize(router)
+	if err != nil {
+		t.Fatalf("Error during authorization: %v", err)
+	}
+
+	response := performRequest(router, http.MethodGet, "/favorites", token)
+	if response.Code != http.StatusOK {
+		t.Fatalf("GET /favorites :: Expected status HTTP 200, got %d", response.Code)
+	}
+
+	favoriteOffset := "4"
+	outOfBoundsOffset := "-15"
+	notANumberOffset := "Word"
+
+	response = performRequest(router, http.MethodPut, "/favorites/" + favoriteOffset, token)
+	if response.Code != http.StatusCreated {
+		t.Errorf("Error in 'PUT /favorites/%s' Expected HTTP 201, got HTTP %d", favoriteOffset, response.Code)
+	}
+
+	response = performRequest(router, http.MethodPut, "/favorites/" + favoriteOffset, token)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("Error in 'PUT /favorites/%s' Expected HTTP 204, got HTTP %d", favoriteOffset, response.Code)
+	}
+
+	response = performRequest(router, http.MethodPut, "/favorites/" + outOfBoundsOffset, token)
+	if response.Code != http.StatusBadRequest {
+		t.Errorf("Error in 'PUT /favorites/%s' Expected HTTP 400, got HTTP %d", outOfBoundsOffset, response.Code)
+	}
+
+	response = performRequest(router, http.MethodPut, "/favorites/" + notANumberOffset, token)
+	if response.Code != http.StatusBadRequest {
+		t.Errorf("Error in 'PUT /favorites/%s' Expected HTTP 400, got HTTP %d", notANumberOffset, response.Code)
+	}
+
+	response = performRequest(router, http.MethodDelete, "/favorites/" + favoriteOffset, token)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("Error in 'DELETE /favorites/%s' Expected HTTP 204, got HTTP %d", favoriteOffset, response.Code)
+	}
+
+	response = performRequest(router, http.MethodDelete, "/favorites/" + favoriteOffset, token)
+	if response.Code != http.StatusNotFound {
+		t.Errorf("Error in 'DELETE /favorites/%s' Expected HTTP 404, got HTTP %d", favoriteOffset, response.Code)
+	}
+}
+
+func authorize(router http.Handler) (string, error) {
+	loginBody := strings.NewReader(`{
+		"username": "user",
+		"password": "password"
+	}`)
+
+	loginRequest := httptest.NewRequest(
+		http.MethodPost,
+		"/auth",
+		loginBody,
+	)
+	loginRequest.Header.Set("Content-Type", "application/json")
+	loginRecorder := httptest.NewRecorder()
+	router.ServeHTTP(loginRecorder, loginRequest)
+	if loginRecorder.Code != http.StatusOK {
+		return "", fmt.Errorf("Error in /auth :: Returned status is not 200")
+	}
+
+	var authResponse AuthResponse
+	if err := json.Unmarshal(loginRecorder.Body.Bytes(), &authResponse); err != nil {
+		return "", fmt.Errorf("Endpoint /auth :: Failed to decode token: %v", err)
+	}
+
+	if authResponse.AccessToken == "" {
+		return "", fmt.Errorf("Endpoint /auth :: Empty token")
+	}
+
+	return authResponse.AccessToken, nil
+}
+
+func performRequest(router http.Handler, method string, path string, token string) (httptest.ResponseRecorder) {
+	request := httptest.NewRequest(method, path, nil)
+	request.Header.Set("Authorization", "Bearer " + token)
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, request)
+	return *recorder
 }
