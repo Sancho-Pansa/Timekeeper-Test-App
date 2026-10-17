@@ -1,8 +1,15 @@
 .git
-.gitignore
+.github
 .idea
 .vscode
+
+.env
+.env.*
+!.env.example
+
 *.exe
 *.test
 *.log
+coverage.out
+
 README.md

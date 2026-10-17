@@ -2,23 +2,26 @@ FROM golang:1.27-alpine AS builder
 
 WORKDIR /src
 
-COPY go.mod ./
+COPY go.mod go.sum* ./
 RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -o /timekeeper ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux \
+  go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/timekeeper \
+    ./cmd/server
 
-FROM alpine:3
+FROM scratch
 
 WORKDIR /app
 
-COPY --from=builder /timekeeper /app/timekeeper
+COPY --from=builder /out/timekeeper /app/timekeeper
 
-EXPOSE "8080"
+USER "65532:65532"
 
-ENV APP_USERNAME="user"
-ENV APP_PASSWORD="password"
-ENV APP_VERSION="0.0.11"
+EXPOSE 8080
 
-CMD [ "/app/timekeeper" ]
+ENTRYPOINT [ "/app/timekeeper" ]
